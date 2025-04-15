@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dbrf-viewer
+  labels:
+    app: dbrf-viewer
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: dbrf-viewer
+  template:
+    metadata:
+      labels:
+        app: dbrf-viewer
+    spec:
+      containers:
+        - name: dbrf-viewer
+          image: dbrf-viewer:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
