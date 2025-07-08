@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: conduktor-db
+  namespace: dbrf
+spec:
+  selector:
+    app: conduktor-db
+  ports:
+    - port: 5432
+      targetPort: 5432
+      nodePort: 30432 # Optional if you want external access
+  type: NodePort

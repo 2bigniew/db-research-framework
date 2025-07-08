@@ -1,0 +1,70 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: flink-sql-gateway
+  namespace: dbrf
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: flink-sql-gateway
+  template:
+    metadata:
+      labels:
+        app: flink-sql-gateway
+    spec:
+      containers:
+        - name: flink-sql-gateway
+          image: flink:1.20-scala_2.12
+          command:
+            [
+              "sh",
+              "-c",
+              "bin/sql-gateway.sh start-foreground -Dsql-gateway.endpoint.rest.address=localhost",
+            ]
+          ports:
+            - containerPort: 8083
+          env:
+            - name: AWS_ACCESS_KEY_ID
+              value: "minioadmin"
+            - name: AWS_SECRET_ACCESS_KEY
+              value: "minioadmin"
+            - name: FLINK_SQL_GATEWAY_ADDRESS
+              value: "0.0.0.0"
+            - name: FLINK_PROPERTIES
+              value: |
+                jobmanager.rpc.address: flink-jobmanager
+                rest.bind-port: 8083
+                execution.runtime-mode: streaming
+                sql-gateway.endpoint.rest.address: 0.0.0.0
+                sql-gateway.endpoint.rest.port: 8083
+                s3.access-key: minioadmin
+                s3.access-secret: minioadmin
+                s3.endpoint: http://minio:9000
+                s3.path.style.access: true
+          volumeMounts:
+            - name: flink-usrlib
+              mountPath: /opt/flink/usrlib
+            # - name: flink-sql
+            #   mountPath: /opt/flink/sql-scripts
+            # - name: flink-conf
+            #   mountPath: /opt/flink/conf/flink-conf.yaml
+            #   subPath: flink-conf.yaml
+            - name: flink-sql-gateway-config
+              mountPath: /opt/flink/conf/sql-gateway-defaults.yaml
+              subPath: sql-gateway-defaults.yaml
+      volumes:
+        - name: flink-usrlib
+          hostPath:
+            path: /home/zbyszek/project/priv/db-research-framework/volumes/flink/flink-usrlib
+            type: DirectoryOrCreate
+        # - name: flink-sql
+        #   hostPath:
+        #     path: /home/zbyszek/project/priv/db-research-framework/volumes/flink/sql-scripts
+        #     type: DirectoryOrCreate
+        # - name: flink-conf
+        #   configMap:
+        #     name: flink-conf
+        - name: flink-sql-gateway-config
+          configMap:
+            name: flink-sql-gateway-config

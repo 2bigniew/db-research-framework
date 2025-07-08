@@ -1,0 +1,78 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: flink-taskmanager
+  namespace: dbrf
+spec:
+  serviceName: flink-taskmanager-headless
+  replicas: 2
+  selector:
+    matchLabels:
+      app: flink-taskmanager
+  template:
+    metadata:
+      labels:
+        app: flink-taskmanager
+    spec:
+      # initContainers:
+      #   - name: copy-flink-conf
+      #     image: busybox
+      #     command: ["sh", "-c", "cp /config/* /flink-conf/"]
+      #     volumeMounts:
+      #       - name: flink-configmap
+      #         mountPath: /config
+      #       - name: flink-conf
+      #         mountPath: /flink-conf
+      containers:
+        - name: taskmanager
+          image: flink:1.20-scala_2.12
+          args:
+            - taskmanager
+          env:
+            - name: AWS_ACCESS_KEY_ID
+              value: "minioadmin"
+            - name: AWS_SECRET_ACCESS_KEY
+              value: "minioadmin"
+            - name: FLINK_PROPERTIES
+              value: |
+                jobmanager.rpc.address: flink-jobmanager
+                taskmanager.numberOfTaskSlots: 30
+                taskmanager.memory.process.size: 2048m
+                s3.access-key: minioadmin
+                s3.access-secret: minioadmin
+                s3.endpoint: http://minio:9000
+                s3.path.style.access: true
+                execution.checkpointing.interval: 10000
+                execution.checkpointing.mode: AT_LEAST_ONCE
+                execution.checkpointing.timeout: 10min
+                state.backend: rocksdb
+                state.backend.incremental: true
+                state.checkpoints.dir: s3a://dbrf-bucket/checkpoints/
+                state.savepoints.dir: s3a://dbrf-bucket/savepoints/
+                restart-strategy.type: exponential-delay
+          volumeMounts:
+            - name: flink-usrlib
+              mountPath: /opt/flink/usrlib
+            - name: flink-sql
+              mountPath: /opt/flink/sql-scripts
+            # - name: flink-conf
+            #   mountPath: /opt/flink/conf
+      volumes:
+        - name: flink-usrlib
+          hostPath:
+            path: /home/zbyszek/project/priv/db-research-framework/volumes/flink/flink-usrlib
+            type: DirectoryOrCreate
+        - name: flink-sql
+          hostPath:
+            path: /home/zbyszek/project/priv/db-research-framework/volumes/flink/sql-scripts
+            type: DirectoryOrCreate
+        # - name: flink-conf
+        #   emptyDir: {}
+        # - name: flink-configmap
+        #   configMap:
+        #     name: flink-conf
+# TODO : setup sql gateway, setup headless service, setup kafka connection,
+# Add a headless service for the TaskManager StatefulSet
+# Set up the SQL Gateway as a separate component
+# Add PersistentVolumeClaims instead of hostPath
+# Apply any advanced Flink config via ConfigMap or custom JAR mount points

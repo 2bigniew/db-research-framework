@@ -1,0 +1,50 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: conduktor-console
+  namespace: dbrf
+spec:
+  serviceName: conduktor-console
+  replicas: 1
+  selector:
+    matchLabels:
+      app: conduktor-console
+  template:
+    metadata:
+      labels:
+        app: conduktor-console
+    spec:
+      containers:
+        - name: conduktor-console
+          image: conduktor/conduktor-console:1.32.0
+          ports:
+            - containerPort: 8080
+          securityContext:
+            runAsUser: 0 # 👈 Equivalent to `user: root`
+          env:
+            - name: CDK_DATABASE_URL
+              value: "postgresql://conduktor:password@conduktor-db:5432/conduktor_console"
+            - name: CDK_CLUSTERS_0_ID
+              value: "local"
+            - name: CDK_CLUSTERS_0_NAME
+              value: "Local Kafka Cluster"
+            - name: CDK_CLUSTERS_0_BOOTSTRAPSERVERS
+              value: "PLAINTEXT://broker-kafka:29092"
+            - name: CDK_CLUSTERS_0_SCHEMAREGISTRY_URL
+              value: "http://kafka-schema-registry:8081"
+            - name: CDK_CLUSTERS_0_KAFKACONNECTS_0_URL
+              value: "http://kafka-connect:8083"
+            - name: CDK_CLUSTERS_0_KAFKACONNECTS_0_NAME
+              value: "kafka"
+            - name: CDK_ADMIN_EMAIL
+              value: "admin@conduktor.io"
+            - name: CDK_ADMIN_PASSWORD
+              value: "adminP4ss!"
+          volumeMounts:
+            - name: conduktor-data
+              mountPath: /var/conduktor
+      volumes:
+        - name: conduktor-data
+          hostPath:
+            path: /etc/conduktor-db # 👈 Replace with actual full path
+            type: DirectoryOrCreate
