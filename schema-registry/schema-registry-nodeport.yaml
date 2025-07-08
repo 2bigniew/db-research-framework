@@ -1,0 +1,14 @@
+# optional external access
+apiVersion: v1
+kind: Service
+metadata:
+  name: schema-registry-nodeport
+  namespace: dbrf
+spec:
+  type: NodePort
+  selector:
+    app: schema-registry
+  ports:
+    - port: 8081
+      targetPort: 8081
+      nodePort: 30081

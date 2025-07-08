@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: kafka-connect
+  namespace: dbrf
+spec:
+  serviceName: kafka-connect-headless
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kafka-connect
+  template:
+    metadata:
+      labels:
+        app: kafka-connect
+    spec:
+      containers:
+        - name: kafka-connect
+          image: confluentinc/cp-kafka-connect:7.4.0
+          ports:
+            - containerPort: 8083
+          envFrom:
+            - configMapRef:
+                name: kafka-connect-env
+          command:
+            - bash
+            - -c
+            - |
+              confluent-hub install --no-prompt confluentinc/kafka-connect-s3:latest && \
+              confluent-hub install --no-prompt debezium/debezium-connector-mongodb:2.4.2 && \
+              /etc/confluent/docker/run

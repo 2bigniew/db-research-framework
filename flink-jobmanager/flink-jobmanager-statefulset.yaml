@@ -1,0 +1,72 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: flink-jobmanager
+  namespace: dbrf
+spec:
+  serviceName: flink-jobmanager
+  replicas: 2
+  selector:
+    matchLabels:
+      app: flink-jobmanager
+  template:
+    metadata:
+      labels:
+        app: flink-jobmanager
+    spec:
+      containers:
+        - name: jobmanager
+          image: flink:1.20-scala_2.12
+          imagePullPolicy: IfNotPresent
+          command: ["sh", "-c", "bin/jobmanager.sh start-foreground"]
+          ports:
+            - name: rpc
+              containerPort: 6123
+            - name: web-ui
+              containerPort: 8081
+            - name: sql-gateway
+              containerPort: 8083
+          env:
+            - name: AWS_ACCESS_KEY_ID
+              value: "minioadmin"
+            - name: AWS_SECRET_ACCESS_KEY
+              value: "minioadmin"
+            - name: FLINK_PROPERTIES
+              value: |
+                jobmanager.rpc.address: flink-jobmanager
+                execution.checkpointing.interval: 10000
+                execution.checkpointing.mode: AT_LEAST_ONCE
+                execution.checkpointing.timeout: 10min
+                state.backend: rocksdb
+                state.backend.incremental: true
+                state.checkpoints.dir: s3a://dbrf-bucket/checkpoints/
+                state.savepoints.dir: s3a://dbrf-bucket/savepoints/
+                restart-strategy.type: exponential-delay
+                s3.access-key: minioadmin
+                s3.access-secret: minioadmin
+                s3.endpoint: http://minio:9000
+                s3.path.style.access: true
+          volumeMounts:
+            - name: flink-usrlib
+              mountPath: /opt/flink/usrlib
+            - name: flink-sql
+              mountPath: /opt/flink/sql-scripts
+            # - name: flink-conf
+            #   mountPath: /opt/flink/conf/flink-conf.yaml
+            #   subPath: flink-conf.yaml
+      volumes:
+        - name: flink-usrlib
+          hostPath:
+            path: /home/zbyszek/project/priv/db-research-framework/volumes/flink/flink-usrlib
+            type: DirectoryOrCreate
+        - name: flink-sql
+          hostPath:
+            path: /home/zbyszek/project/priv/db-research-framework/volumes/flink/sql-scripts
+            type: DirectoryOrCreate
+        # - name: flink-conf
+        #   configMap:
+        #     name: flink-conf
+        # - name: flink-conf
+        #   hostPath:
+        #     path: /home/zbyszek/project/priv/db-research-framework/volumes/flink/config/flink-conf.yaml
+        #     type: File

@@ -1,0 +1,25 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: minio-init
+  namespace: dbrf
+spec:
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: create-bucket
+          image: minio/mc
+          env:
+            - name: MINIO_ROOT_USER
+              value: "minioadmin"
+            - name: MINIO_ROOT_PASSWORD
+              value: "minioadmin"
+            - name: MINIO_BUCKET_NAME
+              value: "dbrf-bucket"
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              /usr/bin/mc config host add myminio http://minio:9000 $MINIO_ROOT_USER $MINIO_ROOT_PASSWORD;
+              /usr/bin/mc mb myminio/$MINIO_BUCKET_NAME;
+              /usr/bin/mc policy download myminio/$MINIO_BUCKET_NAME;

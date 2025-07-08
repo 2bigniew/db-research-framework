@@ -1,0 +1,23 @@
+execution:
+  planner: blink
+  type: streaming
+  result-mode: table
+  parallelism: 2
+
+gateway:
+  endpoint:
+    rest:
+      address: "0.0.0.0"
+      port: 8083
+
+catalogs:
+  - name: default_catalog
+    type: generic_in_memory
+
+modules:
+  - name: core
+
+deployment:
+  response-timeout: 10s
+  execution:
+    attached: false

@@ -1,0 +1,14 @@
+jobmanager.rpc.address: flink-jobmanager
+taskmanager.numberOfTaskSlots: 30
+s3.access-key: minioadmin
+s3.access-secret: minioadmin
+s3.endpoint: http://minio:9000
+s3.path.style.access: true
+execution.checkpointing.interval: 10000
+execution.checkpointing.mode: AT_LEAST_ONCE
+execution.checkpointing.timeout: 10min
+state.backend: rocksdb
+state.backend.incremental: true
+state.checkpoints.dir: s3a://dbrf-bucket/checkpoints/
+state.savepoints.dir: s3a://dbrf-bucket/savepoints/
+restart-strategy.type: exponential-delay
